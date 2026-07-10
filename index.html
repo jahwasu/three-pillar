@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3층 연금 시뮬레이터 v3.0.01</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            background: #1a1d29;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* 헤더 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3348;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .header-logo {
+            display: flex;
+            gap: 4px;
+            font-size: 14px;
+        }
+        
+        .header-logo-normal {
+            color: #8b92a7;
+        }
+        
+        .header-logo-bold {
+            color: #ffc107;
+            font-weight: 700;
+        }
+
+        /* 제작자 크레딧 (심플 텍스트 링크) */
+        .maker-credit {
+            color: #8b92a7;
+            font-size: 12px;
+            font-weight: 400;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .maker-credit:hover { text-decoration: underline; }
+        
+        /* 콘텐츠 */
+        .content {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 20px;
+            align-items: stretch;
+        }
+        
+        /* 입력 패널 */
+        .input-panel {
+            background: #2d3348;
+            border-radius: 12px;
+            padding: 18px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-panel-content {
+            flex: 1;
+        }
+        
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #e8eaed;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #3d4359;
+        }
+        
+        .input-group {
+            margin-bottom: 14px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: #b8bcc8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .tooltip-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #3d4359;
+            color: #8b92a7;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 11px;
+            margin-left: 6px;
+            cursor: help;
+            position: relative;
+            transition: all 0.2s;
+        }
+        
+        .tooltip-icon:hover {
+            background: #5b9cff;
+            color: #ffffff;
+        }
+        
+        .tooltip-icon:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1d29;
+            color: #e8eaed;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-width: 280px;
+            width: max-content;
+            margin-bottom: 0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            z-index: 100;
+            border: 1px solid #5b9cff;
+            line-height: 1.5;
+            font-weight: 400;
+            animation: tooltipFadeIn 0.2s ease;
+        }
+        
+        /* 우측 표시 툴팁 */
+        .tooltip-icon.tooltip-right:hover::after {
+            bottom: auto;
+            top: 50%;
+            left: calc(100% + 8px);
+            transform: translateY(-50%);
+        }
+        
+        .tooltip-icon.tooltip-right:hover::before {
+            bottom: auto;
+            top: 50%;
+            left: calc(100% + 2px);
+            transform: translateY(-50%) rotate(-45deg);
+        }
+        
+        .tooltip-icon:hover::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #5b9cff;
+            z-index: 101;
+            animation: tooltipFadeIn 0.2s ease;
+        }
+        
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            background: #1a1d29;
+            border: 1px solid #3d4359;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e8eaed;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="text"]:hover,
+        input[type="number"]:hover,
+        select:hover {
+            border-color: #5b9cff;
+            background: #20232f;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #5b9cff;
+            box-shadow: 0 0 0 3px rgba(91, 156, 255, 0.1);
+            background: #20232f;
+        }
+        
+        .input-suffix {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b92a7;
+            font-size: 15px;
+            pointer-events: none;
+        }
+        
+        .input-note {
+            font-size: 11px;
+            color: #8b92a7;
+            margin-top: 6px;
+        }
+        
+        .auto-calculated {
+            background: #2d3348;
+            border: 1px solid #4caf50;
+            color: #4caf50;
+            font-weight: 600;
+        }
+        
+        /* 드롭다운 그리드 */
+        .dropdown-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        /* 슬라이더 */
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #5b9cff 0%, #4caf50 100%);
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border: 3px solid #5b9cff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            margin-top: -6px;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border: 3px solid #5b9cff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .slider-label {
+            font-size: 14px;
+            color: #8b92a7;
+        }
+        
+        .slider-value {
+            font-size: 17px;
+            color: #5b9cff;
+            font-weight: 600;
+        }
+        /* 거치/인출 수익률 2단 배치 */
+        .dual-rate-wrap {
+            display: flex;
+            gap: 16px;
+        }
+        .dual-rate-col {
+            flex: 1;
+            min-width: 0;
+        }
+        .dual-rate-col > label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13.5px;
+        }
+        @media (max-width: 480px) {
+            .dual-rate-wrap { flex-direction: column; gap: 14px; }
+        }
+        /* 라벨 내 거치시작 나이 인라인 셀렉트 */
+        .input-group label.label-with-select {
+            display: grid;
+            grid-template-columns: 1fr auto 28px;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .label-with-select > span:first-child {
+            white-space: nowrap;
+        }
+        .inline-age-select {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #8b92a7;
+            font-weight: 400;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .inline-age-select select {
+            background: #2d3348;
+            color: #d5d9e3;
+            border: 1px solid #3a4155;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+        .calc-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: #2d3348;
+            color: #8b92a7;
+            border: 1px solid #3a4155;
+            border-radius: 6px;
+            padding: 0;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            transition: background .15s ease, color .15s ease;
+        }
+        .calc-btn:hover { background: #667eea; color: #fff; border-color: #667eea; }
+        .calc-btn:active { transform: scale(0.92); }
+        .calc-btn-right { justify-self: end; }
+        
+        /* 리셋 버튼 */
+        .reset-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid #3d4359;
+            color: #8b92a7;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: auto;
+        }
+        
+        .reset-btn:hover {
+            border-color: #5b9cff;
+            color: #5b9cff;
+        }
+        
+        /* 차트 패널 */
+        .chart-panel {
+            background: #2d3348;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-panel > :last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 요약 카드 */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: #1a1d29;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .card:hover {
+            border-color: #3d4359;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-title {
+            font-size: 13px;
+            color: #b8bcc8;
+            font-weight: 500;
+        }
+        
+        .card-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e8eaed;
+            text-align: right;
+        }
+        
+        .card-unit {
+            font-size: 13px;
+            font-weight: 400;
+            color: #8b92a7;
+            margin-left: 4px;
+        }
+        
+        /* 차트 */
+        .chart-container {
+            margin-bottom: 0;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaed;
+            margin-bottom: 16px;
+        }
+        
+        /* 탭 UI */
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #8b92a7;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab-btn:hover {
+            color: #b8bcc8;
+            background: rgba(91, 156, 255, 0.05);
+        }
+        
+        .tab-btn.active {
+            color: #4caf50;
+            border-bottom-color: #4caf50;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Sticky 요약 (모바일) */
+        .sticky-summary {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #2d3348;
+            padding: 12px 16px;
+            margin: -20px -20px 20px -20px;
+            border-bottom: 2px solid #3d4359;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .sticky-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            text-align: center;
+        }
+        
+        .sticky-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .sticky-label {
+            font-size: 10px;
+            color: #8b92a7;
+            text-transform: uppercase;
+        }
+        
+        .sticky-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #e8eaed;
+        }
+        
+        .sticky-value.positive {
+            color: #4caf50;
+        }
+        
+        .sticky-value.negative {
+            color: #ff6b6b;
+        }
+        
+        /* 모바일 */
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .sticky-summary {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .progress-bar {
+                padding: 16px;
+            }
+            
+            .progress-steps {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .progress-step {
+                flex: 1 1 calc(50% - 6px);
+            }
+            
+            .progress-step:not(:last-child)::after {
+                display: none;
+            }
+            
+            .input-panel {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 14px;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-panel {
+                padding: 20px;
+            }
+            
+            .feedback-card {
+                padding: 16px;
+            }
+            
+            .feedback-value {
+                font-size: 24px;
+            }
+            
+            .sticky-summary-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .sticky-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .sticky-label {
+                text-align: left;
+            }
+            
+            .sticky-value {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dropdown-grid {
+                grid-template-columns: 1fr auto 1fr;
+                gap: 6px;
+            }
+            
+            .card-value {
+                font-size: 20px;
+            }
+        }
+        
+        /* 퀵 계산기 팝업 스타일 */
+        .quick-calc-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .quick-calc-modal {
+            background: #1a1d29;
+            border: 2px solid #2d3348;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .quick-calc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3348;
+        }
+        
+        .quick-calc-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quick-calc-close {
+            background: none;
+            border: none;
+            color: #8b92a7;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .quick-calc-close:hover {
+            background: #2d3348;
+            color: #ffffff;
+        }
+        
+        .quick-calc-input-group {
+            margin-bottom: 16px;
+        }
+        
+        .quick-calc-label {
+            display: block;
+            color: #8b92a7;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .quick-calc-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .quick-calc-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #2d3348;
+            border: 1px solid #3d4359;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .quick-calc-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #1a1d29;
+        }
+        
+        .quick-calc-suffix {
+            position: absolute;
+            right: 16px;
+            color: #8b92a7;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        
+        .quick-calc-result {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .quick-calc-result-label {
+            color: #8b92a7;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .quick-calc-result-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .quick-calc-result-sub {
+            color: #8b92a7;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        
+        .quick-calc-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .quick-calc-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-calc-btn-calculate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .quick-calc-btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .quick-calc-btn-apply {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .quick-calc-btn-apply:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .quick-calc-btn-cancel {
+            background: #2d3348;
+            color: #8b92a7;
+        }
+        
+        .quick-calc-btn-cancel:hover {
+            background: #3d4359;
+            color: #ffffff;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>3층 연금 시뮬레이터 <span style="font-size: 0.6em; color: #4caf50; font-weight: 400;">v3.0.03</span></h1>
+            <a class="maker-credit" href="sms:01037329326?body=3층 연금 시뮬레이터 문의드립니다." aria-label="제작자에게 문자 문의">문의 @jahwasu</a>
+        </div>
+        
+        <!-- 콘텐츠 -->
+        <div class="content">
+            <!-- 입력 패널 -->
+            <div class="input-panel">
+                <div class="input-group">
+                    <label>
+                        월 목표 생활비
+                        <span class="tooltip-icon tooltip-right" data-tip="은퇴 후 매달 필요한 생활비입니다.&#10;• 부부 2인 평균: 300만원&#10;• 여유로운 생활: 500만원 이상&#10;• 최소 생활비: 200~250만원&#10;&#10;※ 배우자 단독 생존 시&#10;   부부생활비의 60%를 목표로 합니다">?</span>
+                    </label>
+                    <div class="slider-labels">
+                        <span class="slider-label">300만원</span>
+                        <span class="slider-value" id="targetMonthlyDisplay">300만원</span>
+                        <span class="slider-label">800만원</span>
+                    </div>
+                    <input type="range" id="targetMonthly" min="300" max="800" value="300" step="50">
+                </div>
+                
+                <div class="input-group">
+                    <div class="dual-rate-wrap">
+                        <div class="dual-rate-col">
+                            <label>거치·적립 수익률
+                                <span class="tooltip-icon" data-tip="수령 개시 전까지 적립금을&#10;운용하는 기대수익률(명목)입니다.&#10;&#10;※ 현재 나이 → 연금개시 나이까지&#10;   이 수익률로 거치 투자되어 불어납니다.">?</span>
+                            </label>
+                            <div class="slider-labels">
+                                <span class="slider-label">3%</span>
+                                <span class="slider-value" id="accRateDisplay">5%</span>
+                                <span class="slider-label">12%</span>
+                            </div>
+                            <input type="range" id="accRate" min="3" max="12" value="5" step="1">
+                        </div>
+                        <div class="dual-rate-col">
+                            <label>연금수령 수익률
+                                <span class="tooltip-icon tooltip-right" data-tip="연금 수령(인출) 기간 중&#10;남은 적립금을 운용하는&#10;기대수익률(명목)입니다.&#10;&#10;※ PMT 계산 시 물가상승률 2.5%를&#10;   반영한 실질수익률로 환산됩니다.">?</span>
+                            </label>
+                            <div class="slider-labels">
+                                <span class="slider-label">3%</span>
+                                <span class="slider-value" id="returnRateDisplay">5%</span>
+                                <span class="slider-label">12%</span>
+                            </div>
+                            <input type="range" id="returnRate" min="3" max="12" value="5" step="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 기본정보 섹션 -->
+                <div class="section-basic">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #3d4359;">
+                        <div class="section-title" style="margin: 0; padding: 0; border: none;">기본 정보</div>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="hasSpouse" style="width: 18px; height: 18px; cursor: pointer;">
+                            <span style="font-size: 14px; color: #e8eaed; font-weight: 500;">배우자</span>
+                            <span class="tooltip-icon" data-tip="배우자가 있는 경우 체크하세요.&#10;&#10;• 본인 사망 후 유족연금 계산&#10;• 배우자 단독 생활비 60% 적용&#10;• 유족연금 = max(본인×60%, 배우자연금)">?</span>
+                        </label>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <!-- 본인 정보 (좌측) -->
+                        <div>
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>본인 생년월
+                                    <span class="tooltip-icon" data-tip="본인의 출생연월 6자리를 입력하세요.&#10;예시: 196001 (1960년 1월생)&#10;&#10;입력하면 국민연금 수령 나이가&#10;자동으로 계산됩니다.">?</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="birthYearMonth" placeholder="YYYYMM" maxlength="6" value="197001" onfocus="if(this.placeholder) this.placeholder=''" onblur="if(!this.value) this.placeholder='YYYYMM'">
+                                </div>
+                            </div>
+                            
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>본인 기대수명</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="lifeExpectancy" value="85" min="70" max="100" step="1">
+                                    <span class="input-suffix">세</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden input for calculation -->
+                            <input type="hidden" id="nationalStartAge" value="65">
+                            
+                            <div class="input-group">
+                                <label>본인 국민연금 예상월액
+                                    <span class="tooltip-icon" data-tip="국민연금공단 예상액 조회 방법:&#10;&#10;1. 국민연금공단 홈페이지 접속&#10;2. '내 연금 알아보기' 클릭&#10;3. '예상연금 조회' 선택&#10;4. 공동인증서 로그인&#10;&#10;※ 실질가치 기준으로 입력됩니다">?</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="nationalPension" value="150" min="0" step="10">
+                                    <span class="input-suffix">만원</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 배우자 정보 (우측) -->
+                        <div id="spouseInputs" style="display: none;">
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>배우자 생년월</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="spouseBirthYearMonth" placeholder="YYYYMM" maxlength="6" value="197501" onfocus="if(this.placeholder) this.placeholder=''" onblur="if(!this.value) this.placeholder='YYYYMM'">
+                                </div>
+                            </div>
+                            
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>배우자 기대수명
+                                    <span class="tooltip-icon" data-tip="본인 기대수명 + 나이차이 + 5년으로&#10;자동으로 계산됩니다.&#10;&#10;예: 본인 85세, 배우자 7세 어림&#10;→ 85 + 7 + 5 = 97세&#10;&#10;※ 자동 계산값 (수정 불가)">?</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="spouseLifeExpectancy" value="90" readonly style="background-color: #2d3348; color: #8b92a7; cursor: not-allowed;">
+                                    <span class="input-suffix">세</span>
+                                </div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>배우자 국민연금
+                                    <span class="tooltip-icon" data-tip="배우자의 국민연금 예상월액을&#10;입력하세요.&#10;&#10;본인 사망 후:&#10;유족연금 = max(본인×60%, 배우자연금)">?</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="spouseNationalPension" value="0" min="0" step="10">
+                                    <span class="input-suffix">만원</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 적립금 섹션 -->
+                <div class="section-savings">
+                    <div class="section-title">은퇴시점 적립금</div>
+                
+                <div class="input-group">
+                    <label class="label-with-select">
+                        <span>퇴직연금 적립금</span>
+                        <span class="inline-age-select">거치시작
+                            <select id="retirementDeferAge">
+                                <option value="55">55세</option>
+                                <option value="56">56세</option>
+                                <option value="57">57세</option>
+                                <option value="58">58세</option>
+                                <option value="59">59세</option>
+                                <option value="60" selected>60세</option>
+                                <option value="61">61세</option>
+                                <option value="62">62세</option>
+                                <option value="63">63세</option>
+                                <option value="64">64세</option>
+                                <option value="65">65세</option>
+                            </select>
+                        </span>
+                        <span aria-hidden="true"></span>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="number" id="retirementPension" value="0" min="0" step="1000">
+                        <span class="input-suffix">만원</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>퇴직연금 수령 기간</label>
+                    <div class="dropdown-grid">
+                        <select id="retirementStartAge">
+                            <option value="55">55세</option>
+                            <option value="56">56세</option>
+                            <option value="57">57세</option>
+                            <option value="58">58세</option>
+                            <option value="59">59세</option>
+                            <option value="60" selected>60세</option>
+                            <option value="61">61세</option>
+                            <option value="62">62세</option>
+                            <option value="63">63세</option>
+                            <option value="64">64세</option>
+                            <option value="65">65세</option>
+                            <option value="70">70세</option>
+                            <option value="75">75세</option>
+                        </select>
+                        <span style="display: flex; align-items: center; justify-content: center; color: #667eea; font-size: 18px; font-weight: 700;">→</span>
+                        <select id="retirementEndAge">
+                            <option value="65">65세</option>
+                            <option value="70">70세</option>
+                            <option value="75">75세</option>
+                            <option value="80" selected>80세</option>
+                            <option value="85">85세</option>
+                            <option value="90">90세</option>
+                            <option value="95">95세</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="label-with-select">
+                        <span>사적연금 적립금</span>
+                        <span class="inline-age-select">거치시작
+                            <select id="privateDeferAge">
+                                <option value="50">50세</option>
+                                <option value="52">52세</option>
+                                <option value="55" selected>55세</option>
+                                <option value="57">57세</option>
+                                <option value="58">58세</option>
+                                <option value="59">59세</option>
+                                <option value="60">60세</option>
+                                <option value="61">61세</option>
+                                <option value="62">62세</option>
+                                <option value="63">63세</option>
+                                <option value="64">64세</option>
+                                <option value="65">65세</option>
+                            </select>
+                        </span>
+                        <button type="button" class="calc-btn calc-btn-right" onclick="openQuickCalc()" title="사적연금 계산기" aria-label="사적연금 계산기">fx</button>
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="number" id="privatePension" value="0" min="0" step="1000">
+                        <span class="input-suffix">만원</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>사적연금 수령 기간</label>
+                    <div class="dropdown-grid">
+                        <select id="privateStartAge">
+                            <option value="55">55세</option>
+                            <option value="56">56세</option>
+                            <option value="57">57세</option>
+                            <option value="58">58세</option>
+                            <option value="59">59세</option>
+                            <option value="60" selected>60세</option>
+                            <option value="61">61세</option>
+                            <option value="62">62세</option>
+                            <option value="63">63세</option>
+                            <option value="64">64세</option>
+                            <option value="65">65세</option>
+                            <option value="70">70세</option>
+                            <option value="75">75세</option>
+                        </select>
+                        <span style="display: flex; align-items: center; justify-content: center; color: #667eea; font-size: 18px; font-weight: 700;">→</span>
+                        <select id="privateEndAge">
+                            <option value="65">65세</option>
+                            <option value="70">70세</option>
+                            <option value="75">75세</option>
+                            <option value="80" selected>80세</option>
+                            <option value="85">85세</option>
+                            <option value="90">90세</option>
+                            <option value="95">95세</option>
+                        </select>
+                    </div>
+                </div>
+                </div>
+                <!-- 적립금 섹션 끝 -->
+                
+                <button class="reset-btn" onclick="resetToDefaults()">기본값으로 초기화</button>
+            </div>
+            
+            <!-- 차트 패널 -->
+            <div class="chart-panel">
+                <!-- Sticky 요약 (모바일) -->
+                <div class="sticky-summary">
+                    <div class="sticky-summary-grid">
+                        <div class="sticky-item">
+                            <span class="sticky-label">수령 범위</span>
+                            <span class="sticky-value" id="stickyMonthlyRange" style="font-size: 13px;">-</span>
+                        </div>
+                        <div class="sticky-item">
+                            <span class="sticky-label">목표 대비</span>
+                            <span class="sticky-value" id="stickyGapRange" style="font-size: 13px;">-</span>
+                        </div>
+                        <div class="sticky-item">
+                            <span class="sticky-label">총 수령</span>
+                            <span class="sticky-value" id="stickyTotalAmount">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 요약 카드 -->
+                <div class="summary-cards">
+                    <div class="card" title="연금 개시 시점부터 배우자 기대수명까지 수령 기간">
+                        <div class="card-title">연금 수령 기간</div>
+                        <div class="card-value" id="totalPeriod">-<span class="card-unit">년</span></div>
+                    </div>
+                    <div class="card" title="연금 수령 기간 동안 받게 되는 월 금액의 최대~최소 범위 (연금개시 시점 실질가치 기준)">
+                        <div class="card-title">연금개시 후 월 수령액 범위</div>
+                        <div class="card-value" id="monthlyRange" style="font-size: 18px;">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">연금개시 후 총 실질수령액
+                            <span class="tooltip-icon tooltip-right" data-tip="연금 수령 기간 동안 받는 총액을&#10;연금 개시 시점의 구매력으로&#10;환산한 금액입니다.&#10;&#10;※ 실제 명목 금액은 물가 상승으로&#10;   더 커 보이지만, 구매력은 동일합니다.&#10;&#10;시점: 연금개시 (예: 65세)&#10;가치: 실질가치 (물가상승 반영)" style="font-size: 11px; margin-left: 4px;">?</span>
+                        </div>
+                        <div class="card-value" id="totalAmount">-<span class="card-unit">만원</span></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">국민연금 (본인)
+                            <span class="tooltip-icon tooltip-right" data-tip="수령 기간 중 월 평균&#10;&#10;비중: 본인이 수령하는 3층 연금&#10;(국민연금+퇴직연금+사적연금)&#10;총액 중 비중" style="font-size: 11px; margin-left: 4px;">?</span>
+                        </div>
+                        <div class="card-value">
+                            <span id="nationalAmount" style="font-weight: 700;">-</span><span class="card-unit" style="font-weight: 700;">만원</span> / <span id="nationalContribution" style="font-weight: 400;">-</span><span class="card-unit" style="font-weight: 400;">%</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">퇴직연금
+                            <span class="tooltip-icon tooltip-right" data-tip="수령 기간 중 월 평균 수령액입니다.&#10;&#10;※ 입력한 적립금은 연금 수령 개시&#10;   전까지 '거치·적립 수익률'로&#10;   거치 투자되어 불어난 뒤&#10;   지정한 수령기간에 걸쳐&#10;   분할 수령됩니다.&#10;&#10;※ 수령 기간 중 남은 잔액도&#10;   물가 2.5% 반영 실질수익률로&#10;   계속 운용됩니다.&#10;&#10;비중: 3층 연금 총액 중 비중" style="font-size: 11px; margin-left: 4px;">?</span>
+                        </div>
+                        <div class="card-value">
+                            <span id="retirementAmount" style="font-weight: 700;">-</span><span class="card-unit" style="font-weight: 700;">만원</span> / <span id="retirementContribution" style="font-weight: 400;">-</span><span class="card-unit" style="font-weight: 400;">%</span>
+                        </div>
+                        <div class="card-period" id="retirementPeriodLabel" style="font-size: 12px; color: #8b92a7; margin-top: 4px;">-</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">사적연금
+                            <span class="tooltip-icon tooltip-right" data-tip="수령 기간 중 월 평균 수령액입니다.&#10;&#10;※ 입력한 적립금은 연금 수령 개시&#10;   전까지 '거치·적립 수익률'로&#10;   거치 투자되어 불어난 뒤&#10;   지정한 수령기간에 걸쳐&#10;   분할 수령됩니다.&#10;&#10;※ 수령 기간 중 남은 잔액도&#10;   물가 2.5% 반영 실질수익률로&#10;   계속 운용됩니다.&#10;&#10;비중: 3층 연금 총액 중 비중" style="font-size: 11px; margin-left: 4px;">?</span>
+                        </div>
+                        <div class="card-value">
+                            <span id="privateAmount" style="font-weight: 700;">-</span><span class="card-unit" style="font-weight: 700;">만원</span> / <span id="privateContribution" style="font-weight: 400;">-</span><span class="card-unit" style="font-weight: 400;">%</span>
+                        </div>
+                        <div class="card-period" id="privatePeriodLabel" style="font-size: 12px; color: #8b92a7; margin-top: 4px;">-</div>
+                    </div>
+                </div>
+                
+                <!-- 차트 탭 -->
+                <div class="chart-container">
+                    <!-- 부족액 정보 박스 -->
+                    <div id="shortfallBox" style="display: none; background: linear-gradient(135deg, #2d3348 0%, #1a1d29 100%); border: 2px solid #ff9f43; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                        <!-- 상단: 2열 그리드 -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px;">
+                            <!-- 좌측: 필요 일시금 -->
+                            <div>
+                                <div style="font-size: 12px; color: #ff9f43; font-weight: 600; margin-bottom: 4px;">필요 일시금 (연금개시 시점, 실질가치)</div>
+                                <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                                    <div style="font-size: 22px; font-weight: 700; color: #ffffff;">
+                                        <span id="requiredLumpSum">0</span><span style="font-size: 14px; color: #8b92a7; margin-left: 4px;">만원</span>
+                                    </div>
+                                    <div style="font-size: 10px; color: #6b7280; white-space: nowrap;">
+                                        <span id="shortfallPeriod">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 우측: 월 저축액 -->
+                            <div>
+                                <div style="font-size: 12px; color: #4caf50; font-weight: 600; margin-bottom: 4px;">현재부터 필요한 월 저축액</div>
+                                <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                                    <div style="font-size: 22px; font-weight: 700; color: #4caf50;">
+                                        <span id="monthlyPMT">0</span><span style="font-size: 14px; color: #8b92a7; margin-left: 4px;">만원</span>
+                                    </div>
+                                    <div style="font-size: 10px; color: #6b7280; white-space: nowrap;">
+                                        <span id="investmentPeriod">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 하단: 설명 (좌우 2열 배치) -->
+                        <div style="padding-top: 12px; border-top: 1px solid #3d4359;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 11px; color: #8b92a7; line-height: 1.5;">
+                                <div><span style="color: #ff9f43;">■</span> 목표 대비 부족액을 연금개시 시점 실질가치로 환산한 총액</div>
+                                <div><span style="color: #4caf50;">■</span> 현재부터 연금개시까지 명목수익률 5% 적용 시 필요한 월 투자액</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="chart-tabs" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #2d3348;">
+                        <!-- 좌측: 탭 버튼들 -->
+                        <div style="display: flex; gap: 8px;">
+                            <button class="tab-btn active" onclick="switchTab('annual')">연도별 수령액 추이</button>
+                            <button class="tab-btn" onclick="switchTab('balance')">연금별 잔액 변화</button>
+                        </div>
+                        
+                        <!-- 우측: 부족액 체크박스 -->
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; padding-bottom: 12px;">
+                            <input type="checkbox" id="showShortfall" style="width: 16px; height: 16px; cursor: pointer;">
+                            <span style="font-size: 13px; color: #e8eaed; font-weight: 600;">부족액 분석 표시</span>
+                        </label>
+                    </div>
+                    
+                    <div id="annualTab" class="tab-content active">
+                        <canvas id="annualChart" height="180"></canvas>
+                        <div style="text-align: center; margin-top: 12px; padding: 8px 0; font-size: 12px; color: #ffc107; font-weight: 500;">
+                            ※ 그래프는 연금개시 시점 기준 구매력으로 표시됩니다 (물가조정수익률 적용)
+                        </div>
+                    </div>
+                    
+                    <div id="balanceTab" class="tab-content">
+                        <canvas id="balanceChart" height="180"></canvas>
+                        <div style="text-align: center; margin-top: 12px; padding: 8px 0; font-size: 12px; color: #ffc107; font-weight: 500;">
+                            ※ 그래프는 연금개시 시점 기준 구매력으로 표시됩니다 (물가조정수익률 적용)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // 전역 상수
+        // ========================================
+        
+        /**
+         * 물가상승률 2.5%
+         * - 용도: 실질수익률 계산, 미래가치 할인
+         * - 공식: 실질수익률 = (1 + 명목수익률) / (1 + 0.025) - 1
+         */
+        const INFLATION_RATE = 0.025;
+        
+        /**
+         * 유족연금 비율 60%
+         * - 본인 국민연금 × 0.6 또는 배우자 국민연금 중 큰 값
+         */
+        const SURVIVOR_PENSION_RATE = 0.6;
+        
+        /**
+         * 배우자 생활비 비율 60%
+         * - 배우자 단독 생존 시 목표 생활비 × 0.6
+         */
+        const SPOUSE_LIVING_COST_RATE = 0.6;
+        
+        /**
+         * 배우자 기대수명 추가 연수
+         * - 계산식: 본인 기대수명 + 나이차이 + 5년
+         */
+        const SPOUSE_LIFE_BONUS_YEARS = 5;
+        
+        // ========================================
+        // 전역 변수
+        // ========================================
+        
+        // 차트 객체
+        let annualChart = null;
+        let balanceChart = null;
+        
+        // 사선 패턴 생성 함수
+        function createDiagonalPattern(color = '#ffb366') {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 10;
+            canvas.height = 10;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // 우상향 사선 (45도)
+            ctx.moveTo(0, 10);
+            ctx.lineTo(10, 0);
+            ctx.moveTo(-2, 2);
+            ctx.lineTo(2, -2);
+            ctx.moveTo(8, 12);
+            ctx.lineTo(12, 8);
+            ctx.stroke();
+            
+            return ctx.createPattern(canvas, 'repeat');
+        }
+        
+        // 디바운스
+        let debounceTimer = null;
+        function debounce(func, delay) {
+            return function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => func.apply(this, arguments), delay);
+            };
+        }
+        
+        // ========================================
+        // Phase 2: 연금개시 → 기대수명 (인출 구간)
+        // 연금 수령 시뮬레이션
+        // ========================================
+        
+        /**
+         * PMT 계산 함수 (연금 인출액 계산)
+         * 
+         * @param {number} pv - 현재가치 (원 단위)
+         * @param {number} rate - 수익률 (연 단위, 예: 0.02439)
+         * @param {number} periods - 기간 (년)
+         * @returns {number} 연간 인출액 (원/년)
+         * 
+         * 공식(월복리): 월PMT = PV × [i × (1+i)^m] / [(1+i)^m - 1]
+         *   - i = rate/12 (월이율),  m = periods×12 (총 개월수)
+         *   - 반환값 = 월PMT × 12 (연간 인출액, 재무계산기 월복리 방식과 일치)
+         *
+         * 예시:
+         * - PV: 1억원
+         * - rate: 2.439% (실질 연수익률)
+         * - periods: 20년
+         * - 결과: 약 6,37만원/년 (월 약 53만원)
+         * 
+         * 단위: 원 (내부 계산)
+         * 시점: 연금개시 시점
+         * 가치: 실질가치 (물가상승 반영)
+         *
+         * [통일 기준] 인출 복리주기 = 월복리 (재무계산기와 동일).
+         * 표시는 연 단위(연 인출액 반환)로 유지하여 그래프·표 로직 무수정.
+         */
+        function calculatePMT(pv, rate, periods) {
+            if (pv <= 0 || periods <= 0) return 0;
+            const i = rate / 12;              // 월이율
+            const m = periods * 12;           // 총 개월수
+            if (i === 0) return pv / periods; // 무이자: 연 인출액 = pv/연수
+            const factor = Math.pow(1 + i, m);
+            const monthlyPMT = pv * (i * factor) / (factor - 1);
+            return monthlyPMT * 12;           // 연 인출액으로 반환 (표시 인터페이스 유지)
+        }
+        
+        /**
+         * 연금 수령 시뮬레이션 (연금개시 ~ 기대수명)
+         * 
+         * ※ 중요: currentAge = "연금 개시 나이" (실제 현재 나이 아님!)
+         * 
+         * 입력 단위:
+         * - nationalPensionMonthly: 만원/월
+         * - retirementBalance, privateBalance: 만원
+         * 
+         * 내부 계산 단위:
+         * - 원 (× 10000)
+         * 
+         * 출력 단위:
+         * - 만원 (/ 10000)
+         * 
+         * 시점:
+         * - 시작: 연금개시 나이 (예: 65세)
+         * - 종료: 기대수명 (예: 85세)
+         * 
+         * 가치:
+         * - 모두 실질가치 기준 (물가상승 반영)
+         */
+        function simulatePension(params) {
+            const { currentAge, nationalStartAge, nationalPensionMonthly, spouseNationalPensionMonthly,
+                    retirementBalance, privateBalance, realReturnRate,
+                    retirementStartAge, privateStartAge, lifeExpectancy,
+                    retirementPeriod, privatePeriod } = params;
+            
+            // currentAge = 연금 개시 시작 나이 (예: 65세)
+            // lifeExpectancy = 본인 기대수명 (예: 90세)
+            
+            const maxAge = Math.min(lifeExpectancy, currentAge + 40);
+            const maxYears = maxAge - currentAge + 1; // +1로 기대수명 포함 보장 (기말 기준)
+            const results = [];
+            let retBalance = retirementBalance;
+            let privBalance = privateBalance;
+            
+            const retirementEndAge = retirementStartAge + retirementPeriod;
+            const privateEndAge = privateStartAge + privatePeriod;
+            
+            const retirementAnnualPMT = calculatePMT(retirementBalance, realReturnRate, retirementPeriod);
+            const privateAnnualPMT = calculatePMT(privateBalance, realReturnRate, privatePeriod);
+            
+            for (let year = 0; year < maxYears; year++) {
+                const age = currentAge + year;
+                
+                // 본인 생존 기간: 본인 국민연금만 (배우자 국민연금은 별도)
+                let nationalPension = 0;
+                if (age >= nationalStartAge) {
+                    nationalPension = nationalPensionMonthly * 12 * 10000;
+                }
+                
+                // [월복리 통일] 연 인출액을 월 12회 균등 인출 + 월이율 복리로 잔액 롤오버
+                const monthlyRate = realReturnRate / 12;
+
+                let retWithdrawal = 0;
+                if (retBalance > 0 && age >= retirementStartAge && age < retirementEndAge) {
+                    retWithdrawal = retirementAnnualPMT;      // 표시용 연 인출액
+                    const retMonthly = retirementAnnualPMT / 12;
+                    for (let mth = 0; mth < 12 && retBalance > 0; mth++) {
+                        retBalance -= retMonthly;             // 월초 인출
+                        if (retBalance > 0) {
+                            retBalance *= (1 + monthlyRate);  // 월복리
+                        } else {
+                            retBalance = 0;
+                        }
+                    }
+                }
+
+                let privWithdrawal = 0;
+                if (privBalance > 0 && age >= privateStartAge && age < privateEndAge) {
+                    privWithdrawal = privateAnnualPMT;        // 표시용 연 인출액
+                    const privMonthly = privateAnnualPMT / 12;
+                    for (let mth = 0; mth < 12 && privBalance > 0; mth++) {
+                        privBalance -= privMonthly;
+                        if (privBalance > 0) {
+                            privBalance *= (1 + monthlyRate);
+                        } else {
+                            privBalance = 0;
+                        }
+                    }
+                }
+                
+                const yearTotal = nationalPension + retWithdrawal + privWithdrawal;
+                
+                results.push({
+                    year: year + 1,
+                    age,
+                    nationalPension: Math.round(nationalPension / 10000),
+                    retWithdrawal: Math.round(retWithdrawal / 10000),
+                    privWithdrawal: Math.round(privWithdrawal / 10000),
+                    total: Math.round(yearTotal / 10000),
+                    retBalance: Math.round(retBalance / 10000),
+                    privBalance: Math.round(privBalance / 10000)
+                });
+            }
+            
+            return results;
+        }
+        
+        // ========================================
+        // 입력 데이터 수집 함수
+        // ========================================
+        
+        /**
+         * 모든 입력값을 읽어서 구조화된 객체로 반환
+         * 
+         * @returns {Object} 입력 데이터 객체
+         */
+        function readInputs() {
+            // 1. 생년월 및 나이 계산
+            const birthYearMonth = document.getElementById('birthYearMonth').value;
+            const birthYear = Math.floor(parseInt(birthYearMonth) / 100);
+            const currentYear = new Date().getFullYear();
+            const actualCurrentAge = currentYear - birthYear;
+            
+            // 2. 연금 개시 나이 및 기대수명
+            const nationalStartAge = parseInt(document.getElementById('nationalStartAge').value) || 65;
+            const lifeExpectancy = parseInt(document.getElementById('lifeExpectancy').value) || 85;
+            const retirementStartAge = parseInt(document.getElementById('retirementStartAge').value) || 60;
+            const privateStartAge = parseInt(document.getElementById('privateStartAge').value) || 55;
+            
+            // 3. 연금 금액 (만원 단위)
+            const nationalPensionMonthly = parseFloat(document.getElementById('nationalPension').value) || 0;
+            const retirementPensionAmount = parseFloat(document.getElementById('retirementPension').value) || 0;
+            const privatePensionAmount = parseFloat(document.getElementById('privatePension').value) || 0;
+            
+            // 4. 연금 개시 시작 나이 (금액이 있는 연금 중 가장 이른 나이)
+            const pensionStartAges = [];
+            if (nationalPensionMonthly > 0) pensionStartAges.push(nationalStartAge);
+            if (retirementPensionAmount > 0) pensionStartAges.push(retirementStartAge);
+            if (privatePensionAmount > 0) pensionStartAges.push(privateStartAge);
+            
+            const pensionStartAge = pensionStartAges.length > 0 
+                ? Math.min(...pensionStartAges) 
+                : nationalStartAge;
+            
+            // 5. 배우자 정보
+            const hasSpouse = document.getElementById('hasSpouse').checked;
+            const spouseNationalPensionMonthly = hasSpouse ? (parseFloat(document.getElementById('spouseNationalPension').value) || 0) : 0;
+            const spouseLifeExpectancy = hasSpouse ? (parseInt(document.getElementById('spouseLifeExpectancy').value) || 88) : lifeExpectancy;
+            
+            // 6. 퇴직/사적연금 잔액 (원 단위로 변환)
+            const retirementBalance = retirementPensionAmount * 10000;
+            const privateBalance = privatePensionAmount * 10000;
+            
+            // 7. 연금 수령 종료 나이 및 기간
+            const retirementEndAge = parseInt(document.getElementById('retirementEndAge').value) || 80;
+            const retirementPeriod = retirementEndAge - retirementStartAge;
+            const privateEndAge = parseInt(document.getElementById('privateEndAge').value) || 75;
+            const privatePeriod = privateEndAge - privateStartAge;
+            
+            // 8. 목표 및 수익률
+            const targetMonthly = parseFloat(document.getElementById('targetMonthly').value) || 400;
+            const returnRate = parseFloat(document.getElementById('returnRate').value) / 100;   // 인출 수익률
+            const accRate = parseFloat(document.getElementById('accRate').value) / 100;          // 거치·적립 수익률
+            const retirementDeferAge = parseInt(document.getElementById('retirementDeferAge').value) || 60;  // 퇴직연금 거치 시작(퇴직시점)
+            const privateDeferAge = parseInt(document.getElementById('privateDeferAge').value) || 55;        // 사적연금 거치 시작
+            
+            // 9. 부족액 표시 여부
+            const showShortfall = document.getElementById('showShortfall').checked;
+            
+            return {
+                birthYearMonth,
+                birthYear,
+                actualCurrentAge,
+                nationalStartAge,
+                lifeExpectancy,
+                retirementStartAge,
+                privateStartAge,
+                nationalPensionMonthly,
+                retirementPensionAmount,
+                privatePensionAmount,
+                pensionStartAge,
+                hasSpouse,
+                spouseNationalPensionMonthly,
+                spouseLifeExpectancy,
+                retirementBalance,
+                privateBalance,
+                retirementEndAge,
+                retirementPeriod,
+                privateEndAge,
+                privatePeriod,
+                targetMonthly,
+                returnRate,
+                accRate,
+                retirementDeferAge,
+                privateDeferAge,
+                showShortfall
+            };
+        }
+        
+        // ========================================
+        // 메인 계산 함수
+        // ========================================
+        
+        /**
+         * 연금 계산 메인 함수
+         * 
+         * 전체 흐름:
+         * 1. 입력값 수집
+         * 2. Phase 2: 연금 시뮬레이션 (연금개시 → 기대수명)
+         * 3. Phase 3: 부족액 계산 (연금개시 시점 기준)
+         * 4. Phase 1: 필요 월 저축액 계산 (현재 → 연금개시)
+         * 5. 대시보드 및 차트 렌더링
+         */
+        function calculatePension() {
+            // 입력값 수집
+            const inputs = readInputs();
+            
+            // 입력값 변수로 추출
+            const {
+                actualCurrentAge, nationalStartAge, lifeExpectancy,
+                retirementStartAge, privateStartAge,
+                nationalPensionMonthly, pensionStartAge,
+                hasSpouse, spouseNationalPensionMonthly, spouseLifeExpectancy,
+                retirementBalance, privateBalance,
+                retirementEndAge, retirementPeriod,
+                privateEndAge, privatePeriod,
+                targetMonthly, returnRate, accRate, retirementDeferAge, privateDeferAge, showShortfall
+            } = inputs;
+            
+            // 실질수익률 계산 (연금수령/인출 단계 · 물가 2.5% 반영)
+            const realReturnRate = (1 + returnRate) / (1 + INFLATION_RATE) - 1;
+            
+            // ── 거치 투자 반영 ──
+            // 입력 적립금은 '거치시작 나이'(퇴직연금=퇴직시점, 기본60세) 기준 금액.
+            // 거치시작 나이 → 수령개시 나이까지 거치 수익률(accRate)로 월복리 성장.
+            const accMonthly = accRate / 12;   // 월이율(연÷12, 재무계산기와 통일)
+            const retDeferMonths = Math.max(0, (retirementStartAge - retirementDeferAge) * 12);
+            const privDeferMonths = Math.max(0, (privateStartAge - privateDeferAge) * 12);
+            const retirementBalanceAtStart = retirementBalance * Math.pow(1 + accMonthly, retDeferMonths);
+            const privateBalanceAtStart = privateBalance * Math.pow(1 + accMonthly, privDeferMonths);
+            
+            // Phase 2: 연금 시뮬레이션 (거치 후 금액으로 인출)
+            const results = simulatePension({
+                currentAge: pensionStartAge, nationalStartAge, nationalPensionMonthly, spouseNationalPensionMonthly,
+                retirementBalance: retirementBalanceAtStart, privateBalance: privateBalanceAtStart, realReturnRate,
+                retirementStartAge, privateStartAge, lifeExpectancy,
+                retirementPeriod, privatePeriod
+            });
+            
+            // 대시보드 업데이트를 위한 데이터 수집 (배우자 단독 기간 포함)
+            const spouseNationalPension = hasSpouse ? spouseNationalPensionMonthly : 0;
+            const survivorPension = hasSpouse ? Math.max(nationalPensionMonthly * SURVIVOR_PENSION_RATE, spouseNationalPension) : 0;
+            
+            const maxDisplayAge = Math.max(lifeExpectancy, hasSpouse ? spouseLifeExpectancy : lifeExpectancy);
+            const totalYears = maxDisplayAge - pensionStartAge + 1;  // 연금 개시 시점부터 계산 (예: 65~95세 = 31년)
+            
+            // 전체 기간의 연금 계산 (본인 생존 + 배우자 단독)
+            let totalAmount = 0;
+            let nationalTotal = 0;
+            let retirementTotal = 0;
+            let privateTotal = 0;
+            
+            for (let year = 0; year < totalYears; year++) {
+                const age = pensionStartAge + year;  // 연금 개시 시점부터 시작 (65, 66, ..., 95)
+                
+                if (age <= lifeExpectancy) {
+                    // 본인 생존 기간 (65~90세)
+                    const found = results.find(r => r.age === age);
+                    if (found) {
+                        totalAmount += found.total;
+                        nationalTotal += found.nationalPension;
+                        retirementTotal += found.retWithdrawal;
+                        privateTotal += found.privWithdrawal;
+                    } else if (age >= nationalStartAge) {
+                        // 국민연금만 있는 경우 (본인 것만, 만원 단위로 통일)
+                        const pension = nationalPensionMonthly * 12;
+                        totalAmount += pension;
+                        nationalTotal += pension;
+                    }
+                } else if (hasSpouse && age <= spouseLifeExpectancy) {
+                    // 배우자 단독 기간 (91~95세): 유족연금만 (만원 단위로 통일)
+                    const yearlyPension = survivorPension * 12;
+                    totalAmount += yearlyPension;
+                    nationalTotal += yearlyPension;
+                }
+            }
+            
+            // 월 수령액 범위 계산 (최대~최소)
+            let monthlyAmounts = [];
+            
+            for (let year = 0; year < totalYears; year++) {
+                const age = pensionStartAge + year;
+                let monthlyAmount = 0;
+                
+                if (age <= lifeExpectancy) {
+                    // 본인 생존 기간
+                    const found = results.find(r => r.age === age);
+                    if (found) {
+                        monthlyAmount = found.total / 12;
+                    } else if (age >= nationalStartAge) {
+                        monthlyAmount = nationalPensionMonthly;
+                    }
+                } else if (hasSpouse && age <= spouseLifeExpectancy) {
+                    // 배우자 단독 기간: 유족연금만
+                    monthlyAmount = survivorPension;
+                }
+                
+                if (monthlyAmount > 0) {
+                    monthlyAmounts.push(monthlyAmount);
+                }
+            }
+            
+            const maxMonthly = monthlyAmounts.length > 0 ? Math.round(Math.max(...monthlyAmounts)) : 0;
+            const minMonthly = monthlyAmounts.length > 0 ? Math.round(Math.min(...monthlyAmounts)) : 0;
+            
+            const nationalContrib = totalAmount > 0 ? (nationalTotal / totalAmount * 100) : 0;
+            const retirementContrib = totalAmount > 0 ? (retirementTotal / totalAmount * 100) : 0;
+            const privateContrib = totalAmount > 0 ? (privateTotal / totalAmount * 100) : 0;
+            
+            // 요약 카드 업데이트
+            document.getElementById('totalPeriod').innerHTML = totalYears + '<span class="card-unit">년</span>';
+            document.getElementById('monthlyRange').innerHTML = maxMonthly.toLocaleString() + '만원 ~ ' + minMonthly.toLocaleString() + '만원';
+            document.getElementById('totalAmount').innerHTML = Math.round(totalAmount).toLocaleString() + '<span class="card-unit">만원</span>';
+            
+            // 각 연금의 실제 수령 기간 계산
+            const nationalPeriodYears = lifeExpectancy - nationalStartAge; // 국민연금 수령 기간
+            const retirementPeriodYears = Math.min(retirementEndAge, lifeExpectancy) - retirementStartAge; // 퇴직연금 수령 기간
+            const privatePeriodYears = Math.min(privateEndAge, lifeExpectancy) - privateStartAge; // 사적연금 수령 기간
+            
+            // 실제 수령 기간 중 월 평균 (수령하는 기간만 기준)
+            const nationalMonthly = nationalPeriodYears > 0 ? Math.round(nationalTotal / nationalPeriodYears / 12) : 0;
+            const retirementMonthly = retirementPeriodYears > 0 ? Math.round(retirementTotal / retirementPeriodYears / 12) : 0;
+            const privateMonthly = privatePeriodYears > 0 ? Math.round(privateTotal / privatePeriodYears / 12) : 0;
+            
+            document.getElementById('nationalAmount').textContent = nationalMonthly.toLocaleString();
+            document.getElementById('nationalContribution').textContent = nationalContrib.toFixed(1);
+            
+            document.getElementById('retirementAmount').textContent = retirementMonthly.toLocaleString();
+            document.getElementById('retirementContribution').textContent = retirementContrib.toFixed(1);
+            
+            document.getElementById('privateAmount').textContent = privateMonthly.toLocaleString();
+            document.getElementById('privateContribution').textContent = privateContrib.toFixed(1);
+            
+            // 수령 시기(기간) 라벨 채우기 (+ 거치 기간)
+            const retDeferYears = Math.max(0, retirementStartAge - retirementDeferAge);
+            const privDeferYears = Math.max(0, privateStartAge - privateDeferAge);
+            const retPeriodLabel = document.getElementById('retirementPeriodLabel');
+            if (retPeriodLabel) {
+                retPeriodLabel.textContent = retirementMonthly > 0
+                    ? '수령 시기: ' + retirementStartAge + '세 ~ ' + retirementEndAge + '세 (' + (retirementEndAge - retirementStartAge) + '년)'
+                      + (retDeferYears > 0 ? ' · 거치 ' + retDeferYears + '년' : '')
+                    : '';
+            }
+            const privPeriodLabel = document.getElementById('privatePeriodLabel');
+            if (privPeriodLabel) {
+                privPeriodLabel.textContent = privateMonthly > 0
+                    ? '수령 시기: ' + privateStartAge + '세 ~ ' + privateEndAge + '세 (' + (privateEndAge - privateStartAge) + '년)'
+                      + (privDeferYears > 0 ? ' · 거치 ' + privDeferYears + '년' : '')
+                    : '';
+            }
+            
+            // Sticky 요약 업데이트 (모바일)
+            document.getElementById('stickyMonthlyRange').textContent = maxMonthly.toLocaleString() + '~' + minMonthly.toLocaleString() + '만';
+            
+            // 목표 대비: max와 min 범위로 표시
+            const gapMax = maxMonthly - targetMonthly;
+            const gapMin = minMonthly - targetMonthly;
+            
+            const stickyGapRange = document.getElementById('stickyGapRange');
+            
+            // 양수/음수 판단 (둘 다 양수, 둘 다 음수, 혼합)
+            if (gapMin >= 0) {
+                // 둘 다 양수
+                stickyGapRange.className = 'sticky-value positive';
+                stickyGapRange.textContent = '+' + gapMax.toLocaleString() + '~+' + gapMin.toLocaleString() + '만';
+            } else if (gapMax < 0) {
+                // 둘 다 음수
+                stickyGapRange.className = 'sticky-value negative';
+                stickyGapRange.textContent = gapMax.toLocaleString() + '~' + gapMin.toLocaleString() + '만';
+            } else {
+                // 혼합 (max 양수, min 음수)
+                stickyGapRange.className = 'sticky-value';
+                stickyGapRange.textContent = '+' + gapMax.toLocaleString() + '~' + gapMin.toLocaleString() + '만';
+            }
+            
+            document.getElementById('stickyTotalAmount').textContent = Math.round(totalAmount).toLocaleString() + '만';
+            
+            // 차트 그리기
+            drawCharts(results, targetMonthly, nationalStartAge, retirementStartAge, privateStartAge);
+        }
+        
+        // 디바운스된 계산 함수 (이벤트 리스너보다 먼저 선언)
+        const calculateImmediate = () => calculatePension();
+        const calculateDebounced = debounce(calculatePension, 200);
+        
+        // 생년월 → 국민연금 수령 나이 계산
+        function calculatePensionAge(birthYearMonth) {
+            if (!birthYearMonth || birthYearMonth.length !== 6) {
+                return 65; // 기본값
+            }
+            
+            const birthYear = parseInt(birthYearMonth.substring(0, 4));
+            
+            // 국민연금 수령 개시 연령표
+            if (birthYear <= 1952) return 60;
+            if (birthYear >= 1953 && birthYear <= 1956) return 61;
+            if (birthYear >= 1957 && birthYear <= 1960) return 62;
+            if (birthYear >= 1961 && birthYear <= 1964) return 63;
+            if (birthYear >= 1965 && birthYear <= 1968) return 64;
+            return 65; // 1969년생 이후
+        }
+        
+        // 성별 및 나이 기반 기대수명 자동 계산
+        function updateSpouseLifeExpectancy() {
+            const ownBirth = document.getElementById('birthYearMonth').value;
+            const spouseBirth = document.getElementById('spouseBirthYearMonth').value;
+            const ownLife = parseInt(document.getElementById('lifeExpectancy').value) || 85;
+            
+            if (ownBirth.length === 6 && spouseBirth.length === 6) {
+                const ownYear = parseInt(ownBirth.substring(0, 4));
+                const spouseYear = parseInt(spouseBirth.substring(0, 4));
+                
+                // 나이 차이 계산
+                const ageDifference = spouseYear - ownYear;
+                
+                // 배우자 기대수명 = 본인 기대수명 + 나이차이 + 5년
+                let spouseLifeExpectancy = ownLife + ageDifference + 5;
+                
+                // 최소 70세, 최대 105세
+                spouseLifeExpectancy = Math.max(70, Math.min(105, spouseLifeExpectancy));
+                document.getElementById('spouseLifeExpectancy').value = spouseLifeExpectancy;
+            }
+        }
+        
+        // 본인 생년월 입력 이벤트
+        document.getElementById('birthYearMonth').addEventListener('input', function() {
+            const value = this.value.replace(/\D/g, ''); // 숫자만
+            this.value = value;
+            
+            if (value.length === 6) {
+                // 유효성 검사
+                const year = parseInt(value.substring(0, 4));
+                const month = parseInt(value.substring(4, 6));
+                
+                const currentYear = new Date().getFullYear();
+                
+                if (year < 1940 || year > currentYear) {
+                    alert('⚠️ 연도는 1940년부터 ' + currentYear + '년 사이여야 합니다.');
+                    this.value = '196001';
+                    return;
+                }
+                
+                if (month < 1 || month > 12) {
+                    alert('⚠️ 월은 01부터 12 사이여야 합니다.');
+                    this.value = value.substring(0, 4) + '01';
+                    return;
+                }
+                
+                const pensionAge = calculatePensionAge(value);
+                document.getElementById('nationalStartAge').value = pensionAge;
+                updateSpouseLifeExpectancy();
+                calculateDebounced();
+            }
+        });
+        
+        // 배우자 생년월 입력 이벤트
+        document.getElementById('spouseBirthYearMonth').addEventListener('input', function() {
+            const value = this.value.replace(/\D/g, ''); // 숫자만
+            this.value = value;
+            
+            if (value.length === 6) {
+                // 유효성 검사
+                const year = parseInt(value.substring(0, 4));
+                const month = parseInt(value.substring(4, 6));
+                
+                const currentYear = new Date().getFullYear();
+                
+                if (year < 1940 || year > currentYear) {
+                    alert('⚠️ 연도는 1940년부터 ' + currentYear + '년 사이여야 합니다.');
+                    this.value = '196301';
+                    return;
+                }
+                
+                if (month < 1 || month > 12) {
+                    alert('⚠️ 월은 01부터 12 사이여야 합니다.');
+                    this.value = value.substring(0, 4) + '01';
+                    return;
+                }
+                
+                updateSpouseLifeExpectancy();
+                calculateDebounced();
+            }
+        });
+        
+        // 본인 기대수명 변경 시 배우자 기대수명도 업데이트
+        document.getElementById('lifeExpectancy').addEventListener('input', function() {
+            updateSpouseLifeExpectancy();
+            calculateDebounced();
+        });
+        
+        // 배우자 체크박스 토글
+        document.getElementById('hasSpouse').addEventListener('change', function() {
+            const spouseInputs = document.getElementById('spouseInputs');
+            if (this.checked) {
+                spouseInputs.style.display = 'block';
+                updateSpouseLifeExpectancy();
+            } else {
+                spouseInputs.style.display = 'none';
+            }
+            calculateDebounced();
+        });
+        
+        // 배우자 국민연금 입력 이벤트
+        document.getElementById('spouseNationalPension').addEventListener('input', function() {
+            calculateDebounced();
+        });
+        
+        // 슬라이더 값 표시 업데이트
+        document.getElementById('targetMonthly').addEventListener('input', function() {
+            document.getElementById('targetMonthlyDisplay').textContent = parseInt(this.value).toLocaleString() + '만원';
+            calculateDebounced();
+        });
+        
+        document.getElementById('returnRate').addEventListener('input', function() {
+            document.getElementById('returnRateDisplay').textContent = this.value + '%';
+            calculateDebounced();
+        });
+        document.getElementById('accRate').addEventListener('input', function() {
+            document.getElementById('accRateDisplay').textContent = this.value + '%';
+            calculateDebounced();
+        });
+        document.getElementById('retirementDeferAge').addEventListener('change', calculateDebounced);
+        document.getElementById('privateDeferAge').addEventListener('change', calculateDebounced);
+        
+        // 부족액 토글 이벤트
+        document.getElementById('showShortfall').addEventListener('change', function() {
+            calculatePension();
+        });
+        
+        // 드롭다운 기간 표시 (삭제됨 - UI에서 제거)
+        /*
+        function updatePeriodDisplay() {
+            const retStart = parseInt(document.getElementById('retirementStartAge').value);
+            const retEnd = parseInt(document.getElementById('retirementEndAge').value);
+            const retPeriod = retEnd - retStart;
+            document.getElementById('retirementPeriod').textContent = `${retStart}세 ~ ${retEnd}세 (${retPeriod}년)`;
+            
+            const privStart = parseInt(document.getElementById('privateStartAge').value);
+            const privEnd = parseInt(document.getElementById('privateEndAge').value);
+            const privPeriod = privEnd - privStart;
+            document.getElementById('privatePeriod').textContent = `${privStart}세 ~ ${privEnd}세 (${privPeriod}년)`;
+        }
+        */
+        
+        document.getElementById('retirementStartAge').addEventListener('change', function() {
+            calculateDebounced();
+        });
+        
+        document.getElementById('retirementEndAge').addEventListener('change', function() {
+            calculateDebounced();
+        });
+        
+        document.getElementById('privateStartAge').addEventListener('change', function() {
+            calculateDebounced();
+        });
+        
+        document.getElementById('privateEndAge').addEventListener('change', function() {
+            calculateDebounced();
+        });
+        
+        // 기타 입력 이벤트
+        document.getElementById('lifeExpectancy').addEventListener('input', calculateDebounced);
+        document.getElementById('nationalPension').addEventListener('input', calculateDebounced);
+        document.getElementById('retirementPension').addEventListener('input', calculateDebounced);
+        document.getElementById('privatePension').addEventListener('input', calculateDebounced);
+        
+        // 기본값으로 리셋
+        function resetToDefaults() {
+            console.log('resetToDefaults 함수 호출됨');
+            
+            console.log('초기화 시작...');
+            document.getElementById('birthYearMonth').value = '197001';
+            document.getElementById('hasSpouse').checked = false;
+            document.getElementById('spouseInputs').style.display = 'none';
+            document.getElementById('spouseBirthYearMonth').value = '197501';
+            document.getElementById('spouseNationalPension').value = 0;
+            document.getElementById('nationalStartAge').value = 65;
+            document.getElementById('lifeExpectancy').value = 85;
+            document.getElementById('spouseLifeExpectancy').value = 90;
+            document.getElementById('nationalPension').value = 150;
+            document.getElementById('retirementPension').value = 0;
+            document.getElementById('retirementStartAge').value = 60;
+            document.getElementById('retirementEndAge').value = 80;
+            document.getElementById('privatePension').value = 0;
+            document.getElementById('privateStartAge').value = 60;
+            document.getElementById('privateEndAge').value = 80;
+            document.getElementById('retirementDeferAge').value = 60;
+            document.getElementById('privateDeferAge').value = 55;
+            document.getElementById('targetMonthly').value = 300;
+            document.getElementById('returnRate').value = 5;
+            document.getElementById('accRate').value = 5;
+            document.getElementById('accRateDisplay').textContent = '5%';
+            
+            document.getElementById('targetMonthlyDisplay').textContent = '300만원';
+            document.getElementById('returnRateDisplay').textContent = '5%';
+            document.getElementById('showShortfall').checked = false;
+            
+            console.log('계산 시작...');
+            calculatePension();
+            console.log('계산 완료');
+            
+            console.log('✅ 모든 값이 기본값으로 초기화되었습니다.');
+        }
+        
+        // 차트 그리기
+        function drawCharts(results, targetMonthly, nationalStartAge, retirementStartAge, privateStartAge) {
+            const lifeExpectancy = parseInt(document.getElementById('lifeExpectancy').value) || 85;
+            const hasSpouse = document.getElementById('hasSpouse').checked;
+            const spouseLifeExpectancy = hasSpouse ? (parseInt(document.getElementById('spouseLifeExpectancy').value) || 88) : lifeExpectancy;
+            
+            // 실제 현재 나이 계산
+            const birthYearMonth = document.getElementById('birthYearMonth').value;
+            const birthYear = Math.floor(parseInt(birthYearMonth) / 100);
+            const currentYear = new Date().getFullYear();
+            const actualCurrentAge = currentYear - birthYear;
+            
+            // 차트 표시는 배우자 기대수명까지만 (초과 표시 안 함)
+            const maxDisplayAge = Math.max(lifeExpectancy, spouseLifeExpectancy);
+            
+            // 연금 금액 확인 (만원 단위)
+            const nationalPensionMonthly = parseFloat(document.getElementById('nationalPension').value) || 0;
+            const retirementPensionAmount = parseFloat(document.getElementById('retirementPension').value) || 0;
+            const privatePensionAmount = parseFloat(document.getElementById('privatePension').value) || 0;
+            
+            // 연금 개시 시점 계산 (금액이 있는 연금만 고려)
+            const pensionStartAges = [];
+            if (nationalPensionMonthly > 0) pensionStartAges.push(nationalStartAge);
+            if (retirementPensionAmount > 0) pensionStartAges.push(retirementStartAge);
+            if (privatePensionAmount > 0) pensionStartAges.push(privateStartAge);
+            
+            const pensionStartAge = pensionStartAges.length > 0 
+                ? Math.min(...pensionStartAges) 
+                : nationalStartAge; // 모든 연금이 0이면 국민연금 시작 나이 기준
+            
+            
+            // 차트 시작점 (연금 개시 시점, 최소 60세부터 표시)
+            const chartStartAge = Math.min(pensionStartAge, 60);
+            
+            const ageRange = [];
+            for (let age = chartStartAge; age <= maxDisplayAge; age++) {
+                ageRange.push(age);
+            }
+            
+            // 배우자 정보
+            const nationalPension = parseFloat(document.getElementById('nationalPension').value) || 0;
+            const spouseNationalPension = hasSpouse ? (parseFloat(document.getElementById('spouseNationalPension').value) || 0) : 0;
+            const survivorPension = hasSpouse ? Math.max(nationalPension * 0.6, spouseNationalPension) : 0;
+            
+            const ownBirthYear = parseInt(document.getElementById('birthYearMonth').value.substring(0, 4));
+            const spouseBirthYear = hasSpouse ? parseInt(document.getElementById('spouseBirthYearMonth').value.substring(0, 4)) : ownBirthYear;
+            const ageDiff = ownBirthYear - spouseBirthYear;
+            
+            const chartData = ageRange.map(age => {
+                const found = results.find(r => r.age === age);
+                
+                // 본인 생존 기간 (기말 기준: 기대수명 포함)
+                if (age <= lifeExpectancy) {
+                    if (found) {
+                        return {
+                            age: found.age,
+                            nationalPension: Math.round(found.nationalPension / 12),
+                            retWithdrawal: Math.round(found.retWithdrawal / 12),
+                            privWithdrawal: Math.round(found.privWithdrawal / 12),
+                            total: Math.round(found.total / 12),
+                            isSpouseOnly: false,
+                            spouseSurvivorPension: 0
+                        };
+                    } else {
+                        // found가 없어도 본인 생존 기간이면 국민연금은 표시
+                        const nationalPensionAmount = age >= nationalStartAge ? (nationalPension + spouseNationalPension) : 0;
+                        return {
+                            age: age,
+                            nationalPension: Math.round(nationalPensionAmount),
+                            retWithdrawal: 0,
+                            privWithdrawal: 0,
+                            total: Math.round(nationalPensionAmount),
+                            isSpouseOnly: false,
+                            spouseSurvivorPension: 0
+                        };
+                    }
+                }
+                
+                // 배우자 단독 생존 기간
+                if (hasSpouse && age > lifeExpectancy && age <= spouseLifeExpectancy) {
+                    const spouseAge = age - ageDiff;
+                    return {
+                        age: age,
+                        nationalPension: 0,
+                        retWithdrawal: 0,
+                        privWithdrawal: 0,
+                        total: 0,
+                        isSpouseOnly: true,
+                        spouseSurvivorPension: Math.round(survivorPension)
+                    };
+                }
+                
+                return { age, nationalPension: 0, retWithdrawal: 0, privWithdrawal: 0, total: 0, isSpouseOnly: false, spouseSurvivorPension: 0 };
+            });
+            
+            // 부족액 계산 (연금 개시 이후만)
+            const showShortfall = document.getElementById('showShortfall').checked;
+            const shortfallData = chartData.map(r => {
+                if (r.age < pensionStartAge) return 0; // 연금 개시 전 부족액 없음
+                
+                const currentTarget = r.isSpouseOnly ? targetMonthly * 0.6 : targetMonthly;
+                const currentIncome = r.isSpouseOnly ? r.spouseSurvivorPension : r.total;
+                const shortfall = Math.max(0, currentTarget - currentIncome);
+                return showShortfall ? shortfall : 0;
+            });
+            
+            // ========================================
+            // Phase 3: 부족액 계산 (연금개시 시점 기준)
+            // ========================================
+            
+            /**
+             * 필요 일시금 계산
+             * 
+             * 목적:
+             * - 목표 생활비와 실제 수령액의 차이(부족액) 계산
+             * - 연금개시 시점 기준 실질가치로 환산
+             * 
+             * 계산 흐름:
+             * 1. 각 연도별 부족액 = 목표 - 실제수령액 (만원/월)
+             * 2. 연간 부족액 = 월부족액 × 12 (만원/년)
+             * 3. 연금개시 시점 PV = 연간부족액 / (1 + realRate)^연차
+             * 4. 모든 연도 합산 → 총 부족액 (만원, 연금개시 시점)
+             * 
+             * 단위: 만원
+             * 시점: 연금개시 시점
+             * 가치: 실질가치 (물가상승 반영)
+             */
+            const returnRate = parseFloat(document.getElementById('returnRate').value) / 100;
+            const realRate = (1 + returnRate) / (1 + 0.025) - 1; // 실질수익률
+            
+            // actualCurrentAge, pensionStartAge는 이미 위에서 선언됨
+            
+            let requiredLumpSum = 0;  // 필요 일시금 (만원, 연금개시 시점)
+            let shortfallStartAge = null;
+            let shortfallEndAge = null;
+            
+            // ----------------------------------------
+            // 1단계: 본인 생존 기간 부족액
+            // (연금개시 ~ 본인 기대수명)
+            // ----------------------------------------
+            chartData.forEach((r, idx) => {
+                if (r.age >= pensionStartAge && r.age <= lifeExpectancy && r.total > 0) {
+                    const shortfall = targetMonthly - r.total;  // 만원/월
+                    
+                    if (shortfall > 0) {
+                        if (shortfallStartAge === null) shortfallStartAge = r.age;
+                        shortfallEndAge = r.age;
+                        
+                        // 연금개시 시점으로 할인 (실질수익률)
+                        const yearOffset = r.age - pensionStartAge;
+                        const annualShortfall = shortfall * 12;  // 만원/년
+                        const pv = annualShortfall / Math.pow(1 + realRate, yearOffset);  // 만원
+                        requiredLumpSum += pv;
+                    }
+                }
+            });
+            
+            // ----------------------------------------
+            // 2단계: 배우자 단독 생존 기간 부족액
+            // (본인 사망 ~ 배우자 사망)
+            // ----------------------------------------
+            
+            if (hasSpouse && spouseLifeExpectancy > lifeExpectancy) {
+                // 유족연금 = max(본인연금 × 60%, 배우자연금)
+                const spouseMonthlyNeed = targetMonthly * 0.6; // 배우자 생활비 60%
+                
+                for (let spouseAge = lifeExpectancy + 1 - ageDiff; spouseAge <= spouseLifeExpectancy - ageDiff; spouseAge++) {
+                    const ownAge = spouseAge + ageDiff; // 본인이 살아있었다면의 나이
+                    
+                    // 유족연금만 수령 (퇴직/사적연금은 본인 사망으로 중단)
+                    const totalIncome = survivorPension;  // 만원/월
+                    const shortfall = spouseMonthlyNeed - totalIncome;  // 만원/월
+                    
+                    if (shortfall > 0) {
+                        if (shortfallStartAge === null) shortfallStartAge = ownAge;
+                        shortfallEndAge = ownAge;
+                        
+                        // 연금개시 시점으로 할인 (실질수익률)
+                        const yearOffset = ownAge - pensionStartAge;
+                        const annualShortfall = shortfall * 12;  // 만원/년
+
+                        const pv = annualShortfall / Math.pow(1 + realRate, yearOffset);
+                        requiredLumpSum += pv;
+                    }
+                }
+            }
+            
+            // 부족액 정보 업데이트
+            if (showShortfall && requiredLumpSum > 0) {
+                // 필요 일시금 표시
+                document.getElementById('requiredLumpSum').textContent = Math.round(requiredLumpSum).toLocaleString();
+                document.getElementById('shortfallPeriod').textContent = shortfallStartAge + '세 ~ ' + shortfallEndAge + '세';
+                
+                // 월 저축액 계산 (실제 현재 나이 ~ 은퇴 시점)
+                const yearsToRetirement = pensionStartAge - actualCurrentAge;  // 예: 65 - 56 = 9년
+                const monthsToRetirement = yearsToRetirement * 12;
+                
+                if (monthsToRetirement > 0) {
+                    const annualRate = returnRate;
+                    const monthlyRate = annualRate / 12;
+                    
+                    // PMT 계산: FV = PMT × [(1+r)^n - 1] / r
+                    // PMT = FV × r / [(1+r)^n - 1]
+                    let monthlyPMT = 0;
+                    if (monthlyRate === 0) {
+                        monthlyPMT = requiredLumpSum / monthsToRetirement;
+                    } else {
+                        const factor = Math.pow(1 + monthlyRate, monthsToRetirement);
+                        monthlyPMT = requiredLumpSum * monthlyRate / (factor - 1);
+                    }
+                    
+                    document.getElementById('monthlyPMT').textContent = Math.round(monthlyPMT).toLocaleString();
+                    document.getElementById('investmentPeriod').textContent = 
+                        yearsToRetirement + '년 (' + actualCurrentAge + '세 → ' + pensionStartAge + '세)';
+                } else {
+                    // 이미 은퇴 시점 도달
+                    document.getElementById('monthlyPMT').textContent = '-';
+                    document.getElementById('investmentPeriod').textContent = '은퇴 도달';
+                }
+                
+                document.getElementById('shortfallBox').style.display = 'block';
+            } else {
+                document.getElementById('shortfallBox').style.display = 'none';
+            }
+            
+            const annualData = {
+                labels: chartData.map(r => r.age + '세'),
+                datasets: [
+                    {
+                        label: '국민연금',
+                        data: chartData.map(r => !r.isSpouseOnly && r.age >= nationalStartAge ? r.nationalPension : 0),
+                        backgroundColor: '#5b9cff',
+                        borderWidth: 0
+                    },
+                    {
+                        label: '퇴직연금',
+                        data: chartData.map(r => !r.isSpouseOnly && r.age >= retirementStartAge ? r.retWithdrawal : 0),
+                        backgroundColor: '#4caf50',
+                        borderWidth: 0
+                    },
+                    {
+                        label: '사적연금',
+                        data: chartData.map(r => !r.isSpouseOnly && r.age >= privateStartAge ? r.privWithdrawal : 0),
+                        backgroundColor: '#2d5f4a',
+                        borderWidth: 0
+                    },
+                    {
+                        label: '유족연금',
+                        data: chartData.map(r => r.isSpouseOnly ? r.spouseSurvivorPension : 0),
+                        backgroundColor: '#8bb3ff', // 옅은 파란색
+                        borderWidth: 0
+                    },
+                    {
+                        label: '부족액',
+                        data: shortfallData,
+                        backgroundColor: createDiagonalPattern('#ffb366'), // 밝은 주황색 우상향 사선
+                        borderWidth: 0
+                    }
+                ],
+                results: chartData
+            };
+            
+            if (annualChart) annualChart.destroy();
+            const ctx1 = document.getElementById('annualChart').getContext('2d');
+            
+            annualChart = new Chart(ctx1, {
+                type: 'bar',
+                data: annualData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            backgroundColor: '#1a1d29',
+                            callbacks: {
+                                label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString() + '만원'
+                            }
+                        },
+                        datalabels: {
+                            display: function(context) {
+                                const datasetIndex = context.datasetIndex;
+                                const dataIndex = context.dataIndex;
+                                
+                                // 모든 dataset에 대해 처리
+                                const datasets = context.chart.data.datasets;
+                                
+                                // 현재 막대의 스택 총합 계산
+                                let stackTotal = 0;
+                                datasets.forEach((dataset, idx) => {
+                                    const value = dataset.data[dataIndex];
+                                    if (value && value > 0) {
+                                        stackTotal += value;
+                                    }
+                                });
+                                
+                                // 0이면 표시 안 함
+                                if (stackTotal === 0) return false;
+                                
+                                // 최상단 dataset만 레이블 표시
+                                // (0이 아닌 값 중 가장 위에 있는 dataset)
+                                // Chart.js 스택은 아래→위로 쌓이므로 역순 탐색
+                                let topDatasetIndex = -1;
+                                for (let i = datasets.length - 1; i >= 0; i--) {
+                                    const value = datasets[i].data[dataIndex];
+                                    if (value && value > 0) {
+                                        topDatasetIndex = i;
+                                        break;
+                                    }
+                                }
+                                
+                                if (datasetIndex !== topDatasetIndex) return false;
+                                
+                                // 첫 번째는 항상 표시
+                                if (dataIndex === 0) return true;
+                                
+                                // 이전 스택 총합 계산
+                                let prevStackTotal = 0;
+                                datasets.forEach((dataset) => {
+                                    const value = dataset.data[dataIndex - 1];
+                                    if (value && value > 0) {
+                                        prevStackTotal += value;
+                                    }
+                                });
+                                
+                                // 금액 변화 시점만 표시
+                                return Math.abs(stackTotal - prevStackTotal) > 0.1;
+                            },
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 4,
+                            color: '#ffffff',
+                            backgroundColor: 'rgba(45, 51, 72, 0.8)',
+                            borderRadius: 4,
+                            padding: {
+                                top: 4,
+                                bottom: 4,
+                                left: 6,
+                                right: 6
+                            },
+                            font: {
+                                size: 11,
+                                weight: 600
+                            },
+                            formatter: function(value, context) {
+                                const dataIndex = context.dataIndex;
+                                const datasets = context.chart.data.datasets;
+                                
+                                // 스택 총합 계산
+                                let stackTotal = 0;
+                                datasets.forEach((dataset) => {
+                                    const val = dataset.data[dataIndex];
+                                    if (val && val > 0) {
+                                        stackTotal += val;
+                                    }
+                                });
+                                
+                                return stackTotal.toLocaleString() + '만원';
+                            },
+                            padding: {
+                                left: 8,
+                                right: 0,
+                                top: 4,
+                                bottom: 4
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                targetLine: {
+                                    type: 'line',
+                                    yMin: targetMonthly,
+                                    yMax: targetMonthly,
+                                    xMin: 0,
+                                    xMax: chartData.findIndex(r => r.age > lifeExpectancy) - 0.5,
+                                    borderColor: '#ffc107',
+                                    borderWidth: 2,
+                                    borderDash: [8, 4],
+                                    label: {
+                                        display: true,
+                                        content: '월 목표: ' + targetMonthly.toLocaleString() + '만원',
+                                        position: 'end',
+                                        backgroundColor: 'rgba(255, 193, 7, 0.9)',
+                                        color: '#1a1d29',
+                                        font: { size: 11, weight: 'bold' },
+                                        padding: 4
+                                    }
+                                },
+                                spouseTargetLine: hasSpouse && spouseLifeExpectancy > lifeExpectancy ? {
+                                    type: 'line',
+                                    yMin: targetMonthly * 0.6,
+                                    yMax: targetMonthly * 0.6,
+                                    xMin: chartData.findIndex(r => r.age > lifeExpectancy) - 0.5,
+                                    xMax: chartData.findIndex(r => r.age === spouseLifeExpectancy) + 0.5,
+                                    borderColor: '#ffc107',
+                                    borderWidth: 2,
+                                    borderDash: [8, 4],
+                                    label: {
+                                        display: true,
+                                        content: '배우자 목표: ' + Math.round(targetMonthly * 0.6).toLocaleString() + '만원',
+                                        position: 'end',
+                                        backgroundColor: 'rgba(255, 193, 7, 0.9)',
+                                        color: '#1a1d29',
+                                        font: { size: 11, weight: 'bold' },
+                                        padding: 4
+                                    }
+                                } : null
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { color: '#3d4359' }, ticks: { color: '#8b92a7' } },
+                        y: { 
+                            stacked: true, 
+                            beginAtZero: true, 
+                            suggestedMax: targetMonthly + 25,
+                            grid: { color: '#3d4359' }, 
+                            ticks: { color: '#8b92a7' } 
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+            
+            // 잔액 차트
+            const balanceData = {
+                labels: results.map(r => r.age + '세'),
+                datasets: [
+                    {
+                        label: '퇴직연금 잔액',
+                        data: results.map(r => r.retBalance),
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: '사적연금 잔액',
+                        data: results.map(r => r.privBalance),
+                        borderColor: '#2d5f4a',
+                        backgroundColor: 'rgba(45, 95, 74, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }
+                ]
+            };
+            
+            if (balanceChart) balanceChart.destroy();
+            const ctx2 = document.getElementById('balanceChart').getContext('2d');
+            
+            balanceChart = new Chart(ctx2, {
+                type: 'line',
+                data: balanceData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            backgroundColor: '#1a1d29',
+                            callbacks: {
+                                label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString() + '만원'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#3d4359' }, ticks: { color: '#8b92a7' } },
+                        y: { beginAtZero: true, grid: { color: '#3d4359' }, ticks: { color: '#8b92a7' } }
+                    }
+                }
+            });
+        }
+        
+        // 초기 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            calculatePension();
+            
+            // 퀵 계산기 Enter 키
+            const qcInputs = ['qcCurrentBalance', 'qcMonthlyDeposit', 'qcReturnRate', 'qcEndAge'];
+            qcInputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            calculateQuickCalc();
+                        }
+                    });
+                }
+            });
+        });
+        
+        // 탭 전환 함수
+        function switchTab(tabName) {
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 모든 탭 콘텐츠 숨기기
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 선택된 탭 활성화
+            if (tabName === 'annual') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('annualTab').classList.add('active');
+            } else if (tabName === 'balance') {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('balanceTab').classList.add('active');
+            }
+        }
+        
+        
+        // 퀵 계산기 함수들
+        function openQuickCalc() {
+            // 현재 생년월일로 나이 계산
+            const birthYearMonth = document.getElementById('birthYearMonth').value;
+            const currentYear = new Date().getFullYear();
+            const currentAge = currentYear - parseInt(birthYearMonth.substring(0, 4));
+            
+            // 연금 수령 시작 나이
+            const privateStartAge = parseInt(document.getElementById('privateStartAge').value);
+            
+            // 현재 나이와 적립 종료 나이 설정
+            document.getElementById('qcCurrentAge').value = currentAge;
+            document.getElementById('qcEndAge').value = privateStartAge;
+            
+            // 현재 사적연금 값 가져오기
+            const currentPrivate = parseInt(document.getElementById('privatePension').value) || 0;
+            document.getElementById('qcCurrentBalance').value = currentPrivate;
+            
+            // 기대수익률 가져오기
+            const returnRate = parseInt(document.getElementById('returnRate').value);
+            document.getElementById('qcReturnRate').value = returnRate;
+            
+            // 팝업 열기
+            document.getElementById('quickCalcOverlay').style.display = 'flex';
+            
+            // 첫 번째 입력 필드에 포커스 (현재 적립금)
+            setTimeout(() => {
+                document.getElementById('qcCurrentBalance').focus();
+            }, 100);
+        }
+        
+        function closeQuickCalc(event) {
+            if (!event || event.target.id === 'quickCalcOverlay') {
+                document.getElementById('quickCalcOverlay').style.display = 'none';
+                document.getElementById('quickCalcResult').style.display = 'none';
+                document.getElementById('qcApplyBtn').style.display = 'none';
+            }
+        }
+        
+        function calculateQuickCalc() {
+            // 입력값 가져오기
+            const currentBalance = parseFloat(document.getElementById('qcCurrentBalance').value) || 0;
+            const monthlyDeposit = parseFloat(document.getElementById('qcMonthlyDeposit').value) || 0;
+            const returnRate = parseFloat(document.getElementById('qcReturnRate').value) / 100 || 0.05;
+            const currentAge = parseInt(document.getElementById('qcCurrentAge').value);
+            const endAge = parseInt(document.getElementById('qcEndAge').value);
+            
+            // 적립 기간 계산 (나이 기반)
+            const years = endAge - currentAge;
+            
+            // 유효성 검사
+            if (years <= 0) {
+                alert('적립 종료 나이는 현재 나이보다 커야 합니다.');
+                return;
+            }
+            
+            if (years > 40) {
+                alert('적립 기간이 40년을 초과할 수 없습니다.');
+                return;
+            }
+            
+            // 월 수익률
+            const monthlyRate = Math.pow(1 + returnRate, 1/12) - 1;
+            const months = years * 12;
+            
+            // 현재 잔고의 미래가치
+            const futureValueOfBalance = currentBalance * Math.pow(1 + monthlyRate, months);
+            
+            // 월 적립금의 미래가치 (연금 종가 공식)
+            let futureValueOfDeposits = 0;
+            if (monthlyDeposit > 0 && monthlyRate > 0) {
+                futureValueOfDeposits = monthlyDeposit * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+            } else if (monthlyDeposit > 0) {
+                futureValueOfDeposits = monthlyDeposit * months;
+            }
+            
+            // 총 최종 금액
+            const totalFutureValue = futureValueOfBalance + futureValueOfDeposits;
+            
+            // 원금 계산
+            const totalPrincipal = currentBalance + (monthlyDeposit * months);
+            
+            // 수익 계산
+            const totalEarnings = totalFutureValue - totalPrincipal;
+            
+            // 결과 표시
+            document.getElementById('qcResultValue').textContent = totalFutureValue.toFixed(0) + '만원';
+            document.getElementById('qcPrincipal').textContent = totalPrincipal.toFixed(0);
+            document.getElementById('qcEarnings').textContent = totalEarnings.toFixed(0);
+            
+            // 결과 영역 표시
+            document.getElementById('quickCalcResult').style.display = 'block';
+            document.getElementById('qcApplyBtn').style.display = 'block';
+            
+            // 결과값 저장 (적용 시 사용)
+            window.qcCalculatedValue = Math.round(totalFutureValue);
+        }
+        
+        function applyQuickCalc() {
+            if (window.qcCalculatedValue) {
+                // 계산된 값을 사적연금 적립금에 적용
+                document.getElementById('privatePension').value = window.qcCalculatedValue;
+                
+                // 연금 재계산
+                calculatePension();
+                
+                // 팝업 닫기
+                closeQuickCalc();
+                
+                // 성공 메시지 (선택사항)
+                // alert('사적연금 적립금이 업데이트되었습니다!');
+            }
+        }
+        
+        
+    </script>
+    
+    <!-- 퀵 계산기 팝업 -->
+    <div id="quickCalcOverlay" class="quick-calc-overlay" onclick="closeQuickCalc(event)">
+        <div class="quick-calc-modal" onclick="event.stopPropagation()">
+            <div class="quick-calc-header">
+                <div class="quick-calc-title">
+                    <span>🧮</span>
+                    <span>사적연금 퀵 계산기</span>
+                </div>
+                <button class="quick-calc-close" onclick="closeQuickCalc()">&times;</button>
+            </div>
+            
+            <div class="quick-calc-input-group">
+                <label class="quick-calc-label">현재 적립금 (만원)</label>
+                <div class="quick-calc-input-wrapper">
+                    <input type="number" id="qcCurrentBalance" class="quick-calc-input" value="0" min="0" step="100" placeholder="현재 보유 금액">
+                    <span class="quick-calc-suffix">만원</span>
+                </div>
+            </div>
+            
+            <div class="quick-calc-input-group">
+                <label class="quick-calc-label">월 적립액 (만원)</label>
+                <div class="quick-calc-input-wrapper">
+                    <input type="number" id="qcMonthlyDeposit" class="quick-calc-input" value="0" min="0" step="10" placeholder="매월 납입 금액">
+                    <span class="quick-calc-suffix">만원</span>
+                </div>
+            </div>
+            
+            <div class="quick-calc-input-group">
+                <label class="quick-calc-label">기대수익률 (%)</label>
+                <div class="quick-calc-input-wrapper">
+                    <input type="number" id="qcReturnRate" class="quick-calc-input" value="5" min="0" max="20" step="0.1" placeholder="연 수익률">
+                    <span class="quick-calc-suffix">%</span>
+                </div>
+            </div>
+            
+            <div class="quick-calc-input-group">
+                <label class="quick-calc-label">현재 나이</label>
+                <div class="quick-calc-input-wrapper">
+                    <input type="number" id="qcCurrentAge" class="quick-calc-input" value="50" min="20" max="70" step="1" readonly style="background-color: #2d3348; color: #8b92a7;">
+                    <span class="quick-calc-suffix">세</span>
+                </div>
+            </div>
+            
+            <div class="quick-calc-input-group">
+                <label class="quick-calc-label">몇 세까지 적립할까요?</label>
+                <div class="quick-calc-input-wrapper">
+                    <input type="number" id="qcEndAge" class="quick-calc-input" value="60" min="20" max="80" step="1" placeholder="적립 종료 나이">
+                    <span class="quick-calc-suffix">세</span>
+                </div>
+            </div>
+            
+            <div id="quickCalcResult" class="quick-calc-result" style="display: none;">
+                <div class="quick-calc-result-label">최종 적립금</div>
+                <div class="quick-calc-result-value" id="qcResultValue">0만원</div>
+                <div class="quick-calc-result-sub">
+                    원금 <span id="qcPrincipal">0</span>만원 + 수익 <span id="qcEarnings">0</span>만원
+                </div>
+            </div>
+            
+            <div class="quick-calc-buttons">
+                <button class="quick-calc-btn quick-calc-btn-calculate" onclick="calculateQuickCalc()">계산하기</button>
+                <button class="quick-calc-btn quick-calc-btn-apply" onclick="applyQuickCalc()" id="qcApplyBtn" style="display: none;">적용하기</button>
+                <button class="quick-calc-btn quick-calc-btn-cancel" onclick="closeQuickCalc()">닫기</button>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
